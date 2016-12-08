@@ -8,6 +8,7 @@ package AuctioningSystem;
 import java.util.*;
 import java.lang.Integer;
 import java.io.*;
+import java.rmi.RemoteException;
 import java.security.*;
 import org.jgroups.*;
 import org.jgroups.blocks.RequestOptions;
@@ -17,13 +18,11 @@ import org.jgroups.blocks.RpcDispatcher;
 // The implementation Class must implement the rmi interface (Auction)
 // and be set as a Remote object on a server
 
-public class AuctionImpl
-    extends java.rmi.server.UnicastRemoteObject
-    implements BuyingInterface, SellerInterface {
+public class AuctionImpl extends ReceiverAdapter implements SellerInterface, BuyingInterface {
 
     private Map<Integer, Auction> auctions;
-    private Map<Integer, byte[]> randomNumbers;
     private JChannel channel;
+    private RpcDispatcher disp;
 
     // Implementations must have an explicit constructor
     // in order to declare the RemoteException exception
@@ -32,59 +31,21 @@ public class AuctionImpl
         throws java.rmi.RemoteException, Exception {
         super();
         auctions = new HashMap<Integer, Auction>(); //Hashmap that holds all auctions
-        randomNumbers = new HashMap<Integer, byte[]>();
-
         channel=new JChannel();
-
-        channel.connect("AuctionCluster");
-    }
-
-    public byte[] sign(byte[] b) 
-        throws java.rmi.RemoteException{
-            byte[] sig = null;
-            try{
-                File fileIn = new File("serverprivate.key");
-                FileInputStream fis = new FileInputStream(fileIn);
-                ObjectInputStream ois = new ObjectInputStream(fis);
-                PrivateKey priv = (PrivateKey)ois.readObject();
-                Signature dsa = Signature.getInstance("SHA1withDSA", "SUN");
-                dsa.initSign(priv);
-                dsa.update(b);
-                sig = dsa.sign();
-                
-            } catch(Exception e){
-                System.out.println(e.toString());
-            }
-            return sig;
         
+        channel.connect("AuctionCluster");
+        this.disp = new RpcDispatcher(channel, this, this, this);
+    }
+    
+    public void receive(Message message){
+      System.out.println(message);
     }
 
-    public boolean returnSignedNumber(byte[] b, int uid){
-        boolean outcome = false;
-        try{
-            File fileIn = new File("public" + uid + ".key");
-            FileInputStream fis = new FileInputStream(fileIn);
-            ObjectInputStream ois = new ObjectInputStream(fis);
-            PublicKey pub = (PublicKey)ois.readObject();
-            Signature sig = Signature.getInstance("SHA1withDSA", "SUN");
-            sig.initVerify(pub);
-            sig.update(randomNumbers.get(uid));
-            outcome = sig.verify(b);
-        } catch(Exception e){
-            System.out.println(e.toString());
-        }
-        return outcome;
+    public void viewAccepted(View view){
+
     }
 
-
-    public byte[] authUser(int uid) 
-        throws java.rmi.RemoteException{
-            Random rand = new Random();
-            byte[] nonse = new byte[10];
-            rand.nextBytes(nonse);
-            randomNumbers.put(uid,nonse);
-            return nonse;
-    }
+    
 
 
     public Collection<Auction> listAllAuctions()
@@ -186,4 +147,19 @@ public class AuctionImpl
                 return "Sorry, this auction is not active";
             }
         }
+
+    @Override
+    public byte[] sign(byte[] b) throws RemoteException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public byte[] authUser(int uid) throws RemoteException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean returnSignedNumber(byte[] b, int uid) throws RemoteException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
 }
