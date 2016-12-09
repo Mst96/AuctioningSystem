@@ -43,17 +43,17 @@ public class FrontEndImpl extends java.rmi.server.UnicastRemoteObject implements
         channel=new JChannel();
         channel.setReceiver(this);
 
-        disp=new RpcDispatcher(channel, this);
-        this.channel.setDiscardOwnMessages(true);
+        disp=new RpcDispatcher(channel, this, this, this);
+        //this.channel.setDiscardOwnMessages(true);
         channel.connect("AuctionCluster");
     }
   
     public void receive(Message message){
-      System.out.println(message);
+      System.out.println(" yooo" + message);
     }
 
     public void viewAccepted(View view){
-        System.out.println(view);
+        System.out.println(view.getMembers());
     }
 
 public byte[] sign(byte[] b) 

@@ -20,7 +20,7 @@ public class AuctionServer {
 
      try {
        	AuctionImpl a = new AuctionImpl();
-       	Naming.rebind("rmi://localhost/AuctionServer", a);
+       	//Naming.rebind("rmi://localhost/AuctionServer", a);
      } 
      catch (Exception e) {
        System.out.println("Server Error: " + e);

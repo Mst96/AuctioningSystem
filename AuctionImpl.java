@@ -6,35 +6,40 @@ package AuctioningSystem;
 */
 
 import java.util.*;
-import java.lang.Integer;
 import java.io.*;
 import java.rmi.RemoteException;
-import java.security.*;
-import org.jgroups.*;
-import org.jgroups.blocks.RequestOptions;
-import org.jgroups.blocks.ResponseMode;
+import org.jgroups.JChannel;
 import org.jgroups.blocks.RpcDispatcher;
+import org.jgroups.util.Util;
+import org.jgroups.Address;
+import org.jgroups.Message;
+import org.jgroups.ReceiverAdapter;
+import org.jgroups.View;
 
 // The implementation Class must implement the rmi interface (Auction)
 // and be set as a Remote object on a server
 
-public class AuctionImpl extends ReceiverAdapter implements SellerInterface, BuyingInterface {
+public class AuctionImpl extends ReceiverAdapter implements SellerInterface, BuyingInterface, Serializable {
 
     private Map<Integer, Auction> auctions;
     private JChannel channel;
     private RpcDispatcher disp;
+    private List<String> state=new LinkedList<String>();
+    private List<Address> members =new LinkedList<Address>();
 
     // Implementations must have an explicit constructor
     // in order to declare the RemoteException exception
 
     public AuctionImpl()
-        throws java.rmi.RemoteException, Exception {
+        throws Exception {
         super();
         auctions = new HashMap<Integer, Auction>(); //Hashmap that holds all auctions
         channel=new JChannel();
-        
+        channel.setReceiver(this);
         channel.connect("AuctionCluster");
+        channel.getState(members.get(0), 1000);
         this.disp = new RpcDispatcher(channel, this, this, this);
+        this.channel.setDiscardOwnMessages(true);
     }
     
     public void receive(Message message){
@@ -42,10 +47,37 @@ public class AuctionImpl extends ReceiverAdapter implements SellerInterface, Buy
     }
 
     public void viewAccepted(View view){
+        members = view.getMembers();
+    }
+
+    public void getState(OutputStream output) throws Exception{
+        synchronized(state) {
+
+        Util.objectToStream(state, new DataOutputStream(output));
+
+    }
+    }
+
+    public void setState(InputStream input) throws Exception{
+         List<String> list;
+
+    list=(List<String>)Util.objectFromStream(new DataInputStream(input));
+
+    synchronized(state) {
+
+        state.clear();
+
+        state.addAll(list);
 
     }
 
-    
+    System.out.println(list.size() + " messages in chat history):");
+
+    for(String str: list)
+
+        System.out.println(str);
+
+    }
 
 
     public Collection<Auction> listAllAuctions()
