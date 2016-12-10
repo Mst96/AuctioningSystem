@@ -6,15 +6,14 @@ package AuctioningSystem;
 */
 
 
-import java.rmi.Naming;	//Import naming classes to bind to rmiregistry
-import java.rmi.Remote;
+
 
 public class AuctionServer {
 
    //auctionserver constructor
    public AuctionServer() {
      
-     //Construct a new auctionImpl object and bind it to the local rmiregistry
+     //Construct a new auctionImpl object
      //N.b. it is possible to host multiple objects on a server by repeating the
      //following method. 
 

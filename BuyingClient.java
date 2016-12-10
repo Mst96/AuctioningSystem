@@ -21,11 +21,18 @@ public class BuyingClient extends Client {
         super(); //constructs super class and 
         b = (BuyingInterface) frontEndInstance;
         int id = askForID();
-        boolean authenticated = authenticateServer(b, id);
+        boolean authenticated = authenticateServer(b, id); //authenticates on frontend using server key
         if(authenticated){
-            user = authenticateUser(b,id);
+            user = authenticateUser(b,id); //authenticates user on front end
+        if(user == null){ //if authentication fails close client
+                System.out.println("User Authentication failed"); 
+                controls(3);
+            }
+        } else{
+            System.out.println("Server Authentication failed");
+            controls(3);
+            
         }
-        System.out.println("the outcome is...... " + authenticated);
     }
 
     public static void main(String[] args) {

@@ -21,8 +21,8 @@ public class FrontEnd {
 
      try {
        	FrontEndImpl f = new FrontEndImpl();
-        LocateRegistry.createRegistry(1099);
-       	Naming.bind("rmi://localhost/FrontEnd", f);
+        LocateRegistry.createRegistry(1099); //creates rmi registry
+       	Naming.bind("rmi://localhost/FrontEnd", f); //binds frontend remote object to rmi server
         
      } 
      catch (Exception e) {

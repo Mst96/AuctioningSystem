@@ -1,18 +1,17 @@
 package AuctioningSystem;
 /*
-	Code: auction server		AuctionServer.java
+	Code: frontend server		FrontEndImpl. java
 
-	Server code for hosting the auctionImpl object
 */
 
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.OutputStream;
-import java.rmi.Naming;	//Import naming classes to bind to rmiregistry
-import java.io.Serializable;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
@@ -24,6 +23,9 @@ import org.jgroups.util.RspList;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.jgroups.Message.TransientFlag;
+import org.jgroups.util.Rsp;
+import org.jgroups.util.Util;
 
 
 
@@ -35,10 +37,12 @@ public class FrontEndImpl extends java.rmi.server.UnicastRemoteObject implements
   private RequestOptions opts;
   private Address a;
   private Map<Integer, byte[]> randomNumbers;
+   private View current_view;
 
   public FrontEndImpl() throws java.rmi.RemoteException, Exception {
         randomNumbers = new HashMap<Integer, byte[]>();
         opts = new RequestOptions(ResponseMode.GET_ALL, 5000);
+        opts.setTransientFlags(TransientFlag.DONT_LOOPBACK);
 
         channel=new JChannel();
         channel.setReceiver(this);
@@ -48,19 +52,22 @@ public class FrontEndImpl extends java.rmi.server.UnicastRemoteObject implements
         channel.connect("AuctionCluster");
     }
   
+  @Override
     public void receive(Message message){
-      System.out.println(" yooo" + message);
+      System.out.println(message);
     }
 
     public void viewAccepted(View view){
         System.out.println(view.getMembers());
+        current_view = view;
     }
 
 public byte[] sign(byte[] b) 
-        throws java.rmi.RemoteException{
+        throws java.rmi.RemoteException{ //server signs byte array
             byte[] sig = null;
             try{
-                File fileIn = new File("serverprivate.key");
+                //reads in private key
+                File fileIn = new File("serverprivate.key"); 
                 FileInputStream fis = new FileInputStream(fileIn);
                 ObjectInputStream ois = new ObjectInputStream(fis);
                 PrivateKey priv = (PrivateKey)ois.readObject();
@@ -79,6 +86,7 @@ public byte[] sign(byte[] b)
     public boolean returnSignedNumber(byte[] b, int uid){
         boolean outcome = false;
         try{
+            //checks user's signature with user's public key
             File fileIn = new File("public" + uid + ".key");
             FileInputStream fis = new FileInputStream(fileIn);
             ObjectInputStream ois = new ObjectInputStream(fis);
@@ -92,7 +100,27 @@ public byte[] sign(byte[] b)
         }
         return outcome;
     }
-
+    public Rsp filterResponses(RspList rsps){
+        //filter responses
+        if(rsps == null) return null;
+        Object previous = rsps.getFirst();
+        boolean mismatch = false;
+        
+        for(int i = 1 ; i < rsps.size(); i++){
+            if(!previous.equals(rsps.get(i))){
+                mismatch = true;
+                break;
+            }
+            previous = rsps.get(i);
+        }
+        if(mismatch){
+            return null;
+        }
+        else{
+            return (Rsp) previous;
+        }
+        
+    }
 
     public byte[] authUser(int uid) 
         throws java.rmi.RemoteException{
@@ -191,28 +219,25 @@ public byte[] sign(byte[] b)
 
         }
 
-    @Override
-    public void getState(OutputStream out) throws Exception {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  @Override
+        public void getState(OutputStream output) throws Exception{
     }
 
-    @Override
-    public void setState(InputStream in) throws Exception {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+  @Override
+    public void setState(InputStream input) throws Exception{
     }
+
 
     @Override
     public void suspect(Address adrs) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        System.out.println(adrs + " is dead");
     }
 
     @Override
     public void block() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public void unblock() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

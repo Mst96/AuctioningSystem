@@ -7,6 +7,7 @@ package AuctioningSystem;
     methods available on the remote calculatorimpl object
 
 */
+
 import java.util.*;
 import java.rmi.Naming;         //Import the rmi naming - so you can lookup remote object
 import java.rmi.RemoteException;    //Import the RemoteException class so you can catch it
@@ -25,11 +26,18 @@ public class SellerClient extends Client {
         super();
         s = (SellerInterface) frontEndInstance;
         int id = askForID();
-        boolean authenticated = authenticateServer(s,id);
+        boolean authenticated = authenticateServer(s,id); //authenticates server
         if(authenticated){
-            user = authenticateUser(s,id);
+            user = authenticateUser(s,id); //if the server autheticates
+            if(user == null){
+                System.out.println("User Authentication failed");
+                controls(3);
+            }
+        } else{
+            System.out.println("Server Authentication failed");
+            controls(3);
+            
         }
-        System.out.println("the outcome is...... " + authenticated);
     }
 
     public static void main(String[] args) {

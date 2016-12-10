@@ -19,14 +19,13 @@ import org.jgroups.View;
 // The implementation Class must implement the rmi interface (Auction)
 // and be set as a Remote object on a server
 
-public class AuctionImpl extends ReceiverAdapter implements SellerInterface, BuyingInterface, Serializable {
+public class AuctionImpl extends ReceiverAdapter implements SellerInterface, BuyingInterface {
 
     private Map<Integer, Auction> auctions;
     private JChannel channel;
     private RpcDispatcher disp;
-    private List<String> state=new LinkedList<String>();
     private List<Address> members =new LinkedList<Address>();
-
+    private View current_view;
     // Implementations must have an explicit constructor
     // in order to declare the RemoteException exception
 
@@ -37,45 +36,29 @@ public class AuctionImpl extends ReceiverAdapter implements SellerInterface, Buy
         channel=new JChannel();
         channel.setReceiver(this);
         channel.connect("AuctionCluster");
-        channel.getState(members.get(0), 1000);
         this.disp = new RpcDispatcher(channel, this, this, this);
         this.channel.setDiscardOwnMessages(true);
     }
     
+    @Override
     public void receive(Message message){
-      System.out.println(message);
+     System.out.println(" yooo" + message);
     }
 
+    @Override
     public void viewAccepted(View view){
         members = view.getMembers();
+        
     }
 
+    @Override
     public void getState(OutputStream output) throws Exception{
-        synchronized(state) {
-
-        Util.objectToStream(state, new DataOutputStream(output));
 
     }
-    }
 
+    @Override
     public void setState(InputStream input) throws Exception{
-         List<String> list;
 
-    list=(List<String>)Util.objectFromStream(new DataInputStream(input));
-
-    synchronized(state) {
-
-        state.clear();
-
-        state.addAll(list);
-
-    }
-
-    System.out.println(list.size() + " messages in chat history):");
-
-    for(String str: list)
-
-        System.out.println(str);
 
     }
 
